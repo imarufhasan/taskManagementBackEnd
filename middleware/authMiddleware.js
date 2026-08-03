@@ -22,7 +22,7 @@ const protect = async (req, res, next) => {
       });
     }
   } catch (error) {
-    return res.status(401).json({
+    return res.status(402).json({
       message: "Invalid token",
     });
   }

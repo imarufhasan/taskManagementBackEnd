@@ -58,9 +58,6 @@ const loginUser = async (req, res) => {
       });
     }
 
-    console.log("password: ", password);
-    console.log("user.password: ", user.password);
-
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -90,9 +87,10 @@ const loginUser = async (req, res) => {
   }
 };
 
+// getProfile
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findOne(req.user._id).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -101,13 +99,13 @@ const getProfile = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       message: "Profile fetched successfully",
       user,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: false,
       message: error.message,
     });
@@ -158,7 +156,7 @@ const deleteProfile = async (req, res) => {
         message: "User not found",
       });
     }
-    await user.remove();
+    await user.deleteOne();
     res.status(200).json({
       status: true,
       message: "Profile deleted successfully",
@@ -171,11 +169,26 @@ const deleteProfile = async (req, res) => {
   }
 };
 
+// changePassword
 const changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user._id);
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        status: false,
+        message: "Old password and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        status: false,
+        message: "New password must be at least 6 characters",
+      });
+    }
+
+    const user = await User.findById(req.user._id).select("+password");
 
     if (!user) {
       return res.status(404).json({
@@ -194,12 +207,35 @@ const changePassword = async (req, res) => {
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
-
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       message: "Password changed successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: error.message,
+    });
+  }
+};
+
+// all user
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "No users found",
+      });
+    }
+    res.status(200).json({
+      status: true,
+      message: "Users fetched successfully",
+      users,
     });
   } catch (error) {
     res.status(500).json({
@@ -216,4 +252,5 @@ module.exports = {
   updateProfile,
   deleteProfile,
   changePassword,
+  getAllUsers,
 };

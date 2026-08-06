@@ -27,5 +27,7 @@ router.delete("/profile", protect, deleteProfile);
 
 router.put("/change-password", protect, changePassword);
 
+router.get("/users", protect, getAllUsers);
+
 module.exports = router;
 
